@@ -1,0 +1,40 @@
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h> 
+#include <termios.h>
+
+struct termios orig_termios;
+
+void disableRawMode() {
+    tcsetattr(STDERR_FILENO, TCSAFLUSH, &orig_termios);
+}
+
+void enableRawMode() {
+
+    tcgetattr(STDIN_FILENO, &orig_termios);
+    atexit(disableRawMode);
+
+    struct termios raw = orig_termios;
+
+    tcgetattr(STDERR_FILENO, &raw);
+
+    raw.c_lflag &= ~(ECHO | ICANON);
+
+    tcsetattr(STDERR_FILENO, TCSAFLUSH, &raw);
+    
+}
+
+int main () {
+    enableRawMode();
+    char c;
+    while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q'){
+        if(iscntrl(c)) {
+            printf("%d\n", c);
+        }
+        else{
+            printf("%d ('%c)\n",c,c);
+        }
+    }
+    return 0;
+}
